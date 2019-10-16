@@ -10,10 +10,26 @@ class WelcomeController < ApplicationController
   end
 
   def export
+
     require 'csv'
-    CSV.open('/Users/muneebfarooqi/upwork_projects/dating_channels/list.csv', "wb") do |csv|
+    CSV.open('/home/muneeb/upwork_projects/youtube-crawler/public/list.csv', "wb") do |csv|
       csv << ['Channel Name', 'Channel URL',  'Channel Image',  'subscribers', 'Views', 'joined_at', 'Social Links','emails',  'Description']
-      YouTube.where(:test_1_pass => true, :test_2_pass => true).reverse.each do |data|
+      YouTube.all.reverse.each do |data|
+        next if data.subscribers.nil?
+        subscriber = '0'
+        if data.subscribers.to_s.include?('K')
+          subscriber = (data.subscribers.sub('K','').strip.to_f * 1000.0)
+        end
+
+        if data.subscribers.to_s.include?('M')
+          subscriber = (data.subscribers.sub('M','').strip.to_f * 100000.0)
+        end
+
+        if subscriber.to_i < 10000
+          puts "================#{data.subscribers}=============="
+          next
+        end
+
         csv << [data.name, data.url, data.profile_url, data.subscribers, data.views, data.joined_at, data.links, data.emails, data.description]
       end
     end

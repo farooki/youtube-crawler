@@ -1,8 +1,56 @@
 class YouTube < ApplicationRecord
+  include Sidekiq::Worker
+  def perform(keyword_id)
+    #keyword = Keyword.find(keyword_id)
+    #YouTube.get_front_page_data(keyword)
+    YouTube.youtube_search_results(keyword_id)
+  end
 
-  def self.get_front_page_data
+  def self.youtube_search_results(keyword_id)
+    for i in 1..16
+      keyword = Keyword.find(i)
+      #browser = Browser.load_google_driver false
+      keyword_url = "https://www.youtube.com/results?search_query=#{keyword.name.gsub(' ','+')}"
+      browser.goto(keyword_url);
+      for i in 1 ..30
+        sleep(4)
+        browser.driver.execute_script("window.scrollBy(0,2000)")
+      end
+      html = browser.html
+      doc = Nokogiri::HTML(html)
+      channels_data = []
+      doc.css('#dismissable , .yt-formatted-string').each do |ch|
+        channel_a = ch.css('#metadata a') rescue nil
+        next unless channel_a
+
+        channel_url = channel_a.first['href'] rescue nil
+        next unless channel_url
+
+        channel_text  = channel_a.first.text.strip
+        channels_data << {
+            channel_url: "https://youtube.com#{channel_url}",
+            channel_text: channel_text
+        }
+      end
+
+      channels_data.uniq.each do |ch|
+        YouTube.find_or_create_by(
+            name: ch[:channel_text],
+            url: ch[:channel_url]
+        )
+      end
+    end
+
+  end
+
+  def self.runner
+    Keyword.where(:is_done => true).each do |keyword|
+      YouTube.perform_async(keyword.id)
+    end
+  end
+
+  def self.get_front_page_data(keyword)
     browser = Browser.load_google_driver
-    Keyword.where(:is_done => false).each do |keyword|
       keyword_url = "https://www.youtube.com/results?search_query=#{keyword.name.gsub(' ','+')}&sp=EgIQAg%253D%253D"
       browser.goto(keyword_url);
       for i in 1 ..20
@@ -32,7 +80,6 @@ class YouTube < ApplicationRecord
         end
       end
       keyword.update(is_done: true)
-    end
     browser.close
   end
 
@@ -47,22 +94,30 @@ class YouTube < ApplicationRecord
 
   def self.perform(id)
     browser = Browser.load_google_driver
-    YouTube.where(:description => 'Description', :test_1_pass => true, :test_2_pass => true).pluck(:id).shuffle.each do |id|
+    YouTube.where(:subscribers => nil).pluck(:id).shuffle.each do |id|
+      next if !YouTube.find(id).subscribers.nil? && YouTube.find(id).is_crawled == true
       begin
         puts "===========================#{id}================================="
         yt = YouTube.find(id)
         #next if yt.is_crawled == true
-        browser.goto yt.url
+        b_url = yt.url
+        b_url = b_url + '/about' unless b_url.include?('/about')
+        browser.goto b_url
         sleep(2)
         html = browser.html
 
         doc = Nokogiri::HTML(html)
+        subscribers = doc.css('#subscriber-count').text.gsub(' subscribers', '').strip rescue '100k'
+        profile_pic = doc.css('yt-img-shadow#avatar img').first['src'] rescue nil
         description = doc.css('div#description-container').first.text.strip rescue nil
         joined_at = doc.css('yt-formatted-string.style-scope.ytd-channel-about-metadata-renderer').map{|g| g if g.text.include?('Joined')}.compact.first.text.gsub('Joined', '').strip rescue nil
         views = doc.css('yt-formatted-string').map{|g| g if g.text.include?('views')}.compact.first.text.gsub('views', '').strip.gsub(',','').to_i rescue nil
         social = doc.css('div#link-list-container').first.css('a').map{|a| {url: a['href'], text: a.text.strip}} rescue []
         emails = get_email_addresses_from_doc_and_html(html) rescue []
         yt.update(
+            profile_url: profile_pic,
+            subscribers: subscribers || '100k',
+            url: b_url,
             description: description,
             is_crawled: true,
             links: social,

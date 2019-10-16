@@ -8,7 +8,7 @@ class Browser < ApplicationRecord
       Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
     else
       #Selenium::WebDriver::Chrome.driver_path = "#{Rails.root.to_s}/plugins/mac/chromedriver"
-      Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/mac/chromedriver"
+      Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
     end
     if browser_settings
       args = (headless == true ? ['--headless', '--disable-gpu'] : [])

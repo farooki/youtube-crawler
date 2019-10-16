@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  url: MyString
+  name: MyString
+  profile_url: MyString
+  cover_url: MyString
+  subscribers: MyString
+  description: 1
+  emails: 
+  views: 1
+  joined_at: 2019-10-07 21:11:45
+  location: MyString
+  videos: 1
+  links: 
+
+two:
+  url: MyString
+  name: MyString
+  profile_url: MyString
+  cover_url: MyString
+  subscribers: MyString
+  description: 1
+  emails: 
+  views: 1
+  joined_at: 2019-10-07 21:11:45
+  location: MyString
+  videos: 1
+  links: 

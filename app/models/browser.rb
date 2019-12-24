@@ -4,8 +4,8 @@ class Browser < ApplicationRecord
   def self.load_google_driver(headless = false, browser_settings = nil, is_firefox = false)
     return (Watir::Browser.new :firefox, headless: false) if is_firefox
     if Rails.env.production?
-      # Selenium::WebDriver::Chrome.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
-      Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
+       Selenium::WebDriver::Chrome.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
+      # Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
     else
       #Selenium::WebDriver::Chrome.driver_path = "#{Rails.root.to_s}/plugins/mac/chromedriver"
       Selenium::WebDriver::Chrome::Service.driver_path = "#{Rails.root.to_s}/plugins/chromedriver"
